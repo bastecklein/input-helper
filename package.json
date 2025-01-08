@@ -1,0 +1,30 @@
+{
+    "name": "input-helper",
+    "version": "1.0.0",
+    "description": "Simple library for handling user input in web based games in a platform agnostic way.",
+    "keywords": ["helpers", "library", "ape apps", "module"],
+    "homepage": "https://www.ape-apps.com",
+    "bugs": {
+        "email": "support@ape-apps.com"
+    },
+    "author": {
+        "name": "Ape Apps",
+        "email": "support@ape-apps.com",
+        "url": "https://www.ape-apps.com"
+    },
+    "funding": {
+        "type": "patreon",
+        "url": "https://www.patreon.com/apeapps"
+    },
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bastecklein/input-helper"
+    },
+    "main": "input-helper.js",
+    "config": {},
+    "dependencies": {},
+    "devDependencies": {},
+    "private": false,
+    "type": "module"
+}
