@@ -1,6 +1,15 @@
 let iOSHoldItem = null;
 let iostouchhold = null;
 
+/**
+ * Handles input events for an element
+ * @param {Object} options 
+ * options.element - the element to handle input for
+ * options.down - function to call when a pointer down event is detected
+ * options.move - function to call when a pointer move event is detected
+ * options.up - function to call when a pointer up event is detected
+ * @returns 
+ */
 export function handleInput(options) {
     if(!options || !options.element) {
         return;
@@ -123,8 +132,8 @@ export function handleInput(options) {
                 }
             }
 
-            if(options.end) {
-                options.end({
+            if(options.up) {
+                options.up({
                     element: element,
                     id: event.pointerId,
                     type: pointerType,
@@ -157,8 +166,8 @@ export function handleInput(options) {
             }
         }
 
-        if(options.end) {
-            options.end({
+        if(options.up) {
+            options.up({
                 element: element,
                 id: event.pointerId,
                 type: pointerType,
@@ -171,6 +180,11 @@ export function handleInput(options) {
     }, { passive: false });
 }
 
+/**
+ * Removes the default touch and mouse events from an element
+ * @param {HTMLElement} element - the element to clear touch events from
+ * @returns
+ * */
 export function clearElementForTouch(element) {
     element.addEventListener("contextmenu", function(e) {
         e.preventDefault();
@@ -215,6 +229,15 @@ export function clearElementForTouch(element) {
     element.style.userSelect = "none";
 }
 
+/**
+ * Handles click and context/long press events for an element
+ * @param {Object} options
+ * options.element - the element to handle click and context events for
+ * options.click - function to call when a click event is detected
+ * options.context - function to call when a context event is detected
+ * options.vibrate - whether or not to vibrate on context event
+ * @returns
+ * */
 export function clickAndContextHelper(options) {
 
     if(!options || !options.element) {
@@ -357,3 +380,9 @@ function killIosHold() {
     iOSHoldItem = null;
     iostouchhold = null;
 }
+
+export default {
+    handleInput,
+    clearElementForTouch,
+    clickAndContextHelper
+};
