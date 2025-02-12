@@ -1,6 +1,6 @@
 {
     "name": "input-helper",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Simple library for handling user input in web based games in a platform agnostic way.",
     "keywords": ["helpers", "library", "ape apps", "module"],
     "homepage": "https://www.ape-apps.com",

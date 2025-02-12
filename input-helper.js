@@ -381,6 +381,21 @@ function killIosHold() {
     iostouchhold = null;
 }
 
+// for backwards compatibility
+if(!window.apeApps) {
+    window.apeApps = {};
+}
+
+if(!window.apeApps.utilities) {
+    window.apeApps.utilities = {};
+}
+
+window.apeApps.utilities.inputHelper = {
+    handleInput,
+    clearElementForTouch,
+    clickAndContextHelper
+};
+
 export default {
     handleInput,
     clearElementForTouch,
