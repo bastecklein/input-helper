@@ -391,7 +391,24 @@ if(!window.apeApps.utilities) {
 }
 
 window.apeApps.utilities.inputHelper = {
-    handleInput,
+    handleInput: function(object, downFunction, moveFunction, endFunction, ignoreOut = false) {
+
+        console.warn("apeApps.utilities.inputHelper.handleInput is deprecated. Please use module instead.");
+
+        handleInput({
+            element: object,
+            down: function(e) {
+                downFunction(e.element, e.id, e.x, e.y, e.type, e.pressure, e.which, e.pageX, e.pageY);
+            },
+            move: function(e) {
+                moveFunction(e.element, e.id, e.x, e.y, e.type, e.pressure, e.which, e.pageX, e.pageY);
+            },
+            up: function(e) {
+                endFunction(e.element, e.id, e.type, e.which, e.evt);
+            },
+            ignoreOut: ignoreOut
+        });
+    },
     clearElementForTouch,
     clickAndContextHelper
 };
