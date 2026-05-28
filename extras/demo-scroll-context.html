@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>input-helper iOS Scroll + Context Demo</title>
+    <style>
+        :root {
+            --bg-1: #f5f7ff;
+            --bg-2: #fff2e8;
+            --card: #ffffffcc;
+            --ink: #1f2533;
+            --muted: #5d6678;
+            --accent: #0e7490;
+            --accent-2: #f97316;
+            --ok: #0f766e;
+            --warn: #b45309;
+            --ring: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 10% 10%, #e0f2fe 0, transparent 38%),
+                radial-gradient(circle at 90% 10%, #ffedd5 0, transparent 40%),
+                linear-gradient(160deg, var(--bg-1), var(--bg-2));
+            min-height: 100vh;
+            padding: 18px;
+        }
+
+        .wrap {
+            max-width: 840px;
+            margin: 0 auto;
+            display: grid;
+            gap: 14px;
+        }
+
+        .card {
+            border: 1px solid #d1d8ea;
+            border-radius: 14px;
+            padding: 14px;
+            background: var(--card);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 24px #0f172a12;
+        }
+
+        h1 {
+            font-size: clamp(1.4rem, 2.8vw, 2rem);
+            margin: 0 0 8px;
+            letter-spacing: 0.03em;
+        }
+
+        p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .helper {
+            font-size: 0.93rem;
+            margin-top: 8px;
+            color: var(--warn);
+        }
+
+        .target {
+            margin-top: 12px;
+            border: 1px dashed #8ea1c7;
+            border-radius: 12px;
+            padding: 12px;
+            background: #ffffff;
+        }
+
+        .target button {
+            border: none;
+            color: #fff;
+            background: linear-gradient(120deg, var(--accent), var(--accent-2));
+            border-radius: 11px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 140ms ease;
+        }
+
+        .target button:active {
+            transform: scale(0.985);
+        }
+
+        .scroll-zone {
+            margin-top: 12px;
+            height: 280px;
+            overflow: auto;
+            border-radius: 12px;
+            border: 1px solid #d6deef;
+            background: #fff;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-item {
+            padding: 10px;
+            border-radius: 9px;
+            margin-bottom: 8px;
+            background: #f4f7ff;
+            border: 1px solid #dce6ff;
+            color: #2a3759;
+        }
+
+        .log {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.85rem;
+            background: #0f172a;
+            color: #d5f7ff;
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 78px;
+            max-height: 180px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+
+        .ok {
+            color: var(--ok);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <section class="card">
+            <h1>input-helper touch behavior demo</h1>
+            <p>This page demonstrates that native iOS scrolling still works while click + long-press context helpers are active.</p>
+            <p class="helper">Try this on iPhone/iPad Safari: scroll the list, tap the button, then long-press the button.</p>
+            <div class="target">
+                <button id="demoBtn" type="button">Tap Or Long-Press Me</button>
+                <div class="scroll-zone" id="scrollZone"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <p><span class="ok">Expected:</span> list scroll remains smooth; tap logs click; long press logs context.</p>
+            <div id="log" class="log">Ready\n</div>
+        </section>
+    </main>
+
+    <script type="module">
+        import inputHelper from "../input-helper.js";
+
+        const demoBtn = document.getElementById("demoBtn");
+        const scrollZone = document.getElementById("scrollZone");
+        const log = document.getElementById("log");
+
+        for(let i = 1; i <= 40; i++) {
+            const row = document.createElement("div");
+            row.className = "scroll-item";
+            row.textContent = "Scrollable row #" + i;
+            scrollZone.appendChild(row);
+        }
+
+        function write(message) {
+            const stamp = new Date().toLocaleTimeString();
+            log.textContent += "[" + stamp + "] " + message + "\n";
+            log.scrollTop = log.scrollHeight;
+        }
+
+        inputHelper.clickAndContextHelper({
+            element: demoBtn,
+            click: function(e) {
+                write("click at x=" + Math.round(e.x) + " y=" + Math.round(e.y));
+            },
+            context: function(e) {
+                write("context(long-press) at x=" + Math.round(e.x) + " y=" + Math.round(e.y));
+            }
+        });
+
+        write("helper attached");
+    </script>
+</body>
+</html>

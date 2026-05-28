@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>input-helper handleInput suppressNative demo</title>
+    <style>
+        :root {
+            --bg: #f7fafc;
+            --ink: #1f2937;
+            --muted: #4b5563;
+            --card: #ffffff;
+            --line: #dbe4ef;
+            --on: #b91c1c;
+            --off: #0f766e;
+            --accent: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(circle at top left, #dbeafe, transparent 50%), var(--bg);
+            padding: 14px;
+        }
+
+        .wrap {
+            max-width: 980px;
+            margin: 0 auto;
+            display: grid;
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 8px 24px #0f172a12;
+        }
+
+        .row {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 860px) {
+            .row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .pane h2 {
+            margin: 0 0 8px;
+            font-size: 1.05rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            margin-left: 6px;
+        }
+
+        .on {
+            background: #fee2e2;
+            color: var(--on);
+        }
+
+        .off {
+            background: #ccfbf1;
+            color: var(--off);
+        }
+
+        .zone {
+            height: 250px;
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .target {
+            border: 2px dashed #64748b;
+            border-radius: 10px;
+            min-height: 120px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 8px;
+            background: #f8fafc;
+            touch-action: auto;
+        }
+
+        .row-item {
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 7px;
+            color: var(--muted);
+        }
+
+        .hint {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .log {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.8rem;
+            background: var(--accent);
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 84px;
+            max-height: 220px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <section class="card">
+            <h1>handleInput native suppression comparison</h1>
+            <p class="hint">Both panes attach handleInput to the dashed target. On touch devices, the right pane should continue to allow scroll gestures.</p>
+        </section>
+
+        <section class="row">
+            <article class="card pane">
+                <h2>Game-style default<span class="badge on">suppressNative: true</span></h2>
+                <div class="zone" id="zoneOn">
+                    <div class="target" id="targetOn">Interact here</div>
+                </div>
+                <div class="log" id="logOn">Ready\n</div>
+            </article>
+
+            <article class="card pane">
+                <h2>Scroll-friendly mode<span class="badge off">suppressNative: false</span></h2>
+                <div class="zone" id="zoneOff">
+                    <div class="target" id="targetOff">Interact here</div>
+                </div>
+                <div class="log" id="logOff">Ready\n</div>
+            </article>
+        </section>
+    </main>
+
+    <script type="module">
+        import inputHelper from "../input-helper.js";
+
+        function fillZone(zone) {
+            for(let i = 1; i <= 35; i++) {
+                const row = document.createElement("div");
+                row.className = "row-item";
+                row.textContent = "Scrollable content row #" + i;
+                zone.appendChild(row);
+            }
+        }
+
+        function logger(node) {
+            return function(message) {
+                const stamp = new Date().toLocaleTimeString();
+                node.textContent += "[" + stamp + "] " + message + "\n";
+                node.scrollTop = node.scrollHeight;
+            };
+        }
+
+        fillZone(document.getElementById("zoneOn"));
+        fillZone(document.getElementById("zoneOff"));
+
+        const logOn = logger(document.getElementById("logOn"));
+        const logOff = logger(document.getElementById("logOff"));
+
+        inputHelper.handleInput({
+            element: document.getElementById("targetOn"),
+            suppressNative: true,
+            down: function(e) {
+                logOn("down " + e.type + " x=" + Math.round(e.pageX) + " y=" + Math.round(e.pageY));
+            },
+            move: function(e) {
+                logOn("move " + e.type + " x=" + Math.round(e.pageX) + " y=" + Math.round(e.pageY));
+            },
+            up: function(e) {
+                logOn("up " + e.type + " evt=" + e.evt);
+            }
+        });
+
+        inputHelper.handleInput({
+            element: document.getElementById("targetOff"),
+            suppressNative: false,
+            down: function(e) {
+                logOff("down " + e.type + " x=" + Math.round(e.pageX) + " y=" + Math.round(e.pageY));
+            },
+            move: function(e) {
+                logOff("move " + e.type + " x=" + Math.round(e.pageX) + " y=" + Math.round(e.pageY));
+            },
+            up: function(e) {
+                logOff("up " + e.type + " evt=" + e.evt);
+            }
+        });
+    </script>
+</body>
+</html>

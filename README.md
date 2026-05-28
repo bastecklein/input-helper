@@ -33,7 +33,10 @@ inputHelper.handleInput({
     element: canvas,
     down: onDown,
     move: onMove,
-    up: onUp
+    up: onUp,
+    // Defaults to true for game-style input handling.
+    // Set false if this element should still allow native gestures like scrolling.
+    suppressNative: true
 });
 
 function onDown(e) {
@@ -66,7 +69,15 @@ const ele = document.getElementById("cleanMeUp");
 
 // this removes a lot of the default behaviors on mobile,
 // such as touch feedback, hilighting, etc
-inputHelper.clearElementForTouch(ele);
+inputHelper.clearElementForTouch(ele, {
+    // Defaults to true for this helper; set false to no-op.
+    suppressNative: true
+});
 ```
 
 Library is pretty basic, let me know if you have issues!
+
+## Demo
+
+- Open `extras/demo-scroll-context.html` in a browser to validate tap, long-press context, and smooth touch scrolling behavior.
+- Open `extras/demo-handleinput-suppress-native.html` to compare `handleInput` behavior with `suppressNative` on vs off.

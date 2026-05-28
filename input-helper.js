@@ -1,6 +1,19 @@
 let iOSHoldItem = null;
 let iostouchhold = null;
 
+function isIOSDevice() {
+    if(typeof navigator == "undefined") {
+        return false;
+    }
+
+    if(/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        return true;
+    }
+
+    // iPadOS can identify as Mac while still reporting touch points.
+    return navigator.platform == "MacIntel" && navigator.maxTouchPoints > 1;
+}
+
 /**
  * Handles input events for an element
  * @param {Object} options 
@@ -8,6 +21,8 @@ let iostouchhold = null;
  * options.down - function to call when a pointer down event is detected
  * options.move - function to call when a pointer move event is detected
  * options.up - function to call when a pointer up event is detected
+ * options.suppressNative - when true, prevents default browser behaviors (defaults to true)
+ * options.preventDefault - deprecated alias for suppressNative
  * @returns 
  */
 export function handleInput(options) {
@@ -18,21 +33,34 @@ export function handleInput(options) {
     const element = options.element;
 
     let ignoreOut = false;
+    let suppressNative = true;
 
     if(options.ignoreOut) {
         ignoreOut = true;
     }
 
-    clearElementForTouch(element);
+    if(options.suppressNative != undefined) {
+        suppressNative = options.suppressNative;
+    } else if(options.preventDefault != undefined) {
+        suppressNative = options.preventDefault;
+    }
+
+    clearElementForTouch(element, {
+        suppressNative: suppressNative
+    });
 
     element.addEventListener("touchstart",function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+        if(suppressNative) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     }, { passive: false });
 
     element.addEventListener("pointerdown", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
+        if(suppressNative) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
             
         let pointerType = "mouse";
             
@@ -72,8 +100,10 @@ export function handleInput(options) {
     }, { passive: false });
 
     element.addEventListener("pointermove", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
+        if(suppressNative) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
 
         let pointerType = "mouse";
             
@@ -115,8 +145,10 @@ export function handleInput(options) {
     if(!ignoreOut) {
         element.addEventListener("pointerout", function (event) {
 
-            event.preventDefault();
-            event.stopPropagation();
+            if(suppressNative) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
 
             let pointerType = "mouse";
                 
@@ -149,8 +181,10 @@ export function handleInput(options) {
 
     element.addEventListener("pointerup", function (event) {
 
-        event.preventDefault();
-        event.stopPropagation();
+        if(suppressNative) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
 
         let pointerType = "mouse";
             
@@ -183,9 +217,25 @@ export function handleInput(options) {
 /**
  * Removes the default touch and mouse events from an element
  * @param {HTMLElement} element - the element to clear touch events from
+ * @param {Object} options
+ * options.suppressNative - when true, disable native touch/click behavior (defaults to true)
  * @returns
  * */
-export function clearElementForTouch(element) {
+export function clearElementForTouch(element, options = {}) {
+    if(!element) {
+        return;
+    }
+
+    let suppressNative = true;
+
+    if(options.suppressNative != undefined) {
+        suppressNative = options.suppressNative;
+    }
+
+    if(!suppressNative) {
+        return;
+    }
+
     element.addEventListener("contextmenu", function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -193,7 +243,7 @@ export function clearElementForTouch(element) {
         return false;
     }, { passive: false });
 
-    element.addEventListener("ontouchforcechange", function(e) {
+    element.addEventListener("touchforcechange", function(e) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -252,22 +302,51 @@ export function clickAndContextHelper(options) {
         vibrate = options.vibrate;
     }
 
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    if (isIOSDevice()) {
 
         let touchStatus = null;
+        let longPressFired = false;
+        let startX = 0;
+        let startY = 0;
+
+        const LONG_PRESS_MS = 600;
+        const MOVE_TOLERANCE_PX = 10;
+
+        const getTouchPoint = function(e) {
+            if(e.changedTouches && e.changedTouches.length > 0) {
+                return {
+                    x: e.changedTouches[0].pageX,
+                    y: e.changedTouches[0].pageY
+                };
+            }
+
+            if(e.touches && e.touches.length > 0) {
+                return {
+                    x: e.touches[0].pageX,
+                    y: e.touches[0].pageY
+                };
+            }
+
+            return {
+                x: e.pageX,
+                y: e.pageY
+            };
+        };
 
         element.ontouchstart = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
             touchStatus = "down";
+            longPressFired = false;
+
+            const point = getTouchPoint(e);
+            startX = point.x;
+            startY = point.y;
 
             iOSHoldItem = element;
 
             iostouchhold = setTimeout(function() {
 
-                if(iOSHoldItem != null) {
-                    iOSHoldItem.touchStatus = "up";
+                if(iOSHoldItem != null && touchStatus == "down") {
+                    longPressFired = true;
                 
                     if(vibrate && navigator.vibrate) {
                         navigator.vibrate(100);
@@ -276,29 +355,31 @@ export function clickAndContextHelper(options) {
                     if(options.context) {
                         options.context({
                             element: element,
-                            x: e.pageX,
-                            y: e.pageY
+                            x: startX,
+                            y: startY
                         });
                     }
                 }
 
                 killIosHold();
-            },600);
+            }, LONG_PRESS_MS);
         };
 
         element.ontouchend = function(e) {
-
-            e.preventDefault();
-            e.stopPropagation();
-
             const stat = touchStatus;
 
             touchStatus = "up";
 
             killIosHold();
 
+            if(longPressFired) {
+                longPressFired = false;
+                return;
+            }
+
             if(stat == "down") {
                 let useEle = element;
+                const point = getTouchPoint(e);
 
                 if(e.target) {
                     useEle = e.target;
@@ -307,30 +388,34 @@ export function clickAndContextHelper(options) {
                 if(options.click) {
                     options.click({
                         element: useEle,
-                        x: e.pageX,
-                        y: e.pageY
+                        x: point.x,
+                        y: point.y
                     });
                 }
             }
 
         };
 
-        element.ontouchcancel = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
+        element.ontouchcancel = function() {
             touchStatus = "up";
+            longPressFired = false;
             killIosHold();
         };
 
     
         element.ontouchmove = function(e) {
+            if(touchStatus != "down") {
+                return;
+            }
 
-            e.preventDefault();
-            e.stopPropagation();
+            const point = getTouchPoint(e);
+            const dx = point.x - startX;
+            const dy = point.y - startY;
 
-            touchStatus = "up";
-            killIosHold();
+            if(Math.abs(dx) > MOVE_TOLERANCE_PX || Math.abs(dy) > MOVE_TOLERANCE_PX) {
+                touchStatus = "up";
+                killIosHold();
+            }
         };
     } else {
         element.onclick = function(e) {
