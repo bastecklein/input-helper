@@ -6,31 +6,32 @@ function getNormalizedPointerCoords(event, element, pointerType) {
     let x = event.offsetX;
     let y = event.offsetY;
 
-    const needsFallback = isTouchLike || !Number.isFinite(x) || !Number.isFinite(y);
-
-    if(needsFallback && element && element.getBoundingClientRect) {
+    if(element && element.getBoundingClientRect) {
         const rect = element.getBoundingClientRect();
+        const cssWidth = rect.width > 0 ? rect.width : 1;
+        const cssHeight = rect.height > 0 ? rect.height : 1;
+
+        const hasClientX = Number.isFinite(event.clientX) || Number.isFinite(event.x);
+        const hasClientY = Number.isFinite(event.clientY) || Number.isFinite(event.y);
 
         const clientX = Number.isFinite(event.clientX)
             ? event.clientX
-            : (Number.isFinite(event.pageX) ? (event.pageX - window.pageXOffset) : 0);
+            : (Number.isFinite(event.x)
+                ? event.x
+                : (Number.isFinite(event.pageX) ? (event.pageX - window.pageXOffset) : Number.NaN));
 
         const clientY = Number.isFinite(event.clientY)
             ? event.clientY
-            : (Number.isFinite(event.pageY) ? (event.pageY - window.pageYOffset) : 0);
+            : (Number.isFinite(event.y)
+                ? event.y
+                : (Number.isFinite(event.pageY) ? (event.pageY - window.pageYOffset) : Number.NaN));
 
-        x = clientX - rect.left;
-        y = clientY - rect.top;
+        const needsClientFallback = isTouchLike || !Number.isFinite(x) || !Number.isFinite(y);
 
-        const cssWidth = rect.width > 0 ? rect.width : 1;
-        const cssHeight = rect.height > 0 ? rect.height : 1;
-
-        x = Math.max(0, Math.min(cssWidth, x));
-        y = Math.max(0, Math.min(cssHeight, y));
-    } else if(element && element.getBoundingClientRect) {
-        const rect = element.getBoundingClientRect();
-        const cssWidth = rect.width > 0 ? rect.width : 1;
-        const cssHeight = rect.height > 0 ? rect.height : 1;
+        if((needsClientFallback || (x === 0 && y === 0)) && hasClientX && hasClientY) {
+            x = clientX - rect.left;
+            y = clientY - rect.top;
+        }
 
         x = Math.max(0, Math.min(cssWidth, x));
         y = Math.max(0, Math.min(cssHeight, y));
