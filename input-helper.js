@@ -2,15 +2,11 @@ let iOSHoldItem = null;
 let iostouchhold = null;
 
 function getNormalizedPointerCoords(event, element, pointerType) {
+    const isTouchLike = pointerType == "touch" || pointerType == "pen";
     let x = event.offsetX;
     let y = event.offsetY;
 
-    // Touch/pen events can report offsetX/offsetY as 0,0 on some hosts.
-    // Fall back to client/page coordinates projected into element space.
-    const needsFallback =
-        !Number.isFinite(x) ||
-        !Number.isFinite(y) ||
-        ((pointerType == "touch" || pointerType == "pen") && x == 0 && y == 0);
+    const needsFallback = isTouchLike || !Number.isFinite(x) || !Number.isFinite(y);
 
     if(needsFallback && element && element.getBoundingClientRect) {
         const rect = element.getBoundingClientRect();
@@ -26,8 +22,18 @@ function getNormalizedPointerCoords(event, element, pointerType) {
         x = clientX - rect.left;
         y = clientY - rect.top;
 
-        x = Math.max(0, Math.min(rect.width, x));
-        y = Math.max(0, Math.min(rect.height, y));
+        const cssWidth = rect.width > 0 ? rect.width : 1;
+        const cssHeight = rect.height > 0 ? rect.height : 1;
+
+        x = Math.max(0, Math.min(cssWidth, x));
+        y = Math.max(0, Math.min(cssHeight, y));
+    } else if(element && element.getBoundingClientRect) {
+        const rect = element.getBoundingClientRect();
+        const cssWidth = rect.width > 0 ? rect.width : 1;
+        const cssHeight = rect.height > 0 ? rect.height : 1;
+
+        x = Math.max(0, Math.min(cssWidth, x));
+        y = Math.max(0, Math.min(cssHeight, y));
     }
 
     return { x, y };
@@ -92,6 +98,14 @@ export function handleInput(options) {
         if(suppressNative) {
             event.preventDefault();
             event.stopPropagation();
+        }
+
+        if(element.setPointerCapture && event.pointerId != undefined) {
+            try {
+                element.setPointerCapture(event.pointerId);
+            } catch {
+                // Some hosts reject capture in specific states; ignore and continue.
+            }
         }
             
         let pointerType = "mouse";
@@ -210,6 +224,14 @@ export function handleInput(options) {
                 });
             }
 
+            if(element.releasePointerCapture && event.pointerId != undefined) {
+                try {
+                    element.releasePointerCapture(event.pointerId);
+                } catch {
+                    // Ignore if capture was not active.
+                }
+            }
+
             return false;
         }, { passive: false });
     }
@@ -244,6 +266,14 @@ export function handleInput(options) {
                 which: which,
                 evt: "up"
             });
+        }
+
+        if(element.releasePointerCapture && event.pointerId != undefined) {
+            try {
+                element.releasePointerCapture(event.pointerId);
+            } catch {
+                // Ignore if capture was not active.
+            }
         }
 
         return false;
