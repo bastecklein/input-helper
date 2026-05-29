@@ -1,6 +1,38 @@
 let iOSHoldItem = null;
 let iostouchhold = null;
 
+function getNormalizedPointerCoords(event, element, pointerType) {
+    let x = event.offsetX;
+    let y = event.offsetY;
+
+    // Touch/pen events can report offsetX/offsetY as 0,0 on some hosts.
+    // Fall back to client/page coordinates projected into element space.
+    const needsFallback =
+        !Number.isFinite(x) ||
+        !Number.isFinite(y) ||
+        ((pointerType == "touch" || pointerType == "pen") && x == 0 && y == 0);
+
+    if(needsFallback && element && element.getBoundingClientRect) {
+        const rect = element.getBoundingClientRect();
+
+        const clientX = Number.isFinite(event.clientX)
+            ? event.clientX
+            : (Number.isFinite(event.pageX) ? (event.pageX - window.pageXOffset) : 0);
+
+        const clientY = Number.isFinite(event.clientY)
+            ? event.clientY
+            : (Number.isFinite(event.pageY) ? (event.pageY - window.pageYOffset) : 0);
+
+        x = clientX - rect.left;
+        y = clientY - rect.top;
+
+        x = Math.max(0, Math.min(rect.width, x));
+        y = Math.max(0, Math.min(rect.height, y));
+    }
+
+    return { x, y };
+}
+
 function isIOSDevice() {
     if(typeof navigator == "undefined") {
         return false;
@@ -83,11 +115,13 @@ export function handleInput(options) {
         }
 
         if(options.down) {
+            const coords = getNormalizedPointerCoords(event, element, pointerType);
+
             options.down({
                 element: element,
                 id: event.pointerId,
-                x: event.offsetX,
-                y: event.offsetY,
+                x: coords.x,
+                y: coords.y,
                 type: pointerType,
                 pressure: pressure,
                 which: which,
@@ -126,11 +160,13 @@ export function handleInput(options) {
         }
 
         if(options.move) {
+            const coords = getNormalizedPointerCoords(event, element, pointerType);
+
             options.move({
                 element: element,
                 id: event.pointerId,
-                x: event.offsetX,
-                y: event.offsetY,
+                x: coords.x,
+                y: coords.y,
                 type: pointerType,
                 pressure: pressure,
                 which: which,
